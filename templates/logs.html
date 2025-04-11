@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bg-white shadow rounded-lg overflow-hidden">
+    <!-- Header Section -->
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h1 class="text-2xl font-bold text-gray-900">Detection Logs</h1>
+        <p class="mt-1 text-sm text-gray-500">History of waste detection events</p>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label for="wasteType" class="block text-sm font-medium text-gray-700">Waste Type</label>
+                <select id="wasteType" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md">
+                    <option value="">All Types</option>
+                    <option value="plastic">Plastic</option>
+                    <option value="metal">Metal</option>
+                    <option value="glass">Glass</option>
+                    <option value="paper">Paper</option>
+                    <option value="organic">Organic</option>
+                    <option value="e-waste">E-Waste</option>
+                    <option value="mixed">Mixed</option>
+                </select>
+            </div>
+            <div>
+                <label for="dateRange" class="block text-sm font-medium text-gray-700">Date Range</label>
+                <select id="dateRange" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md">
+                    <option value="today">Today</option>
+                    <option value="week">Last 7 Days</option>
+                    <option value="month">Last 30 Days</option>
+                    <option value="all">All Time</option>
+                </select>
+            </div>
+            <div>
+                <label for="confidence" class="block text-sm font-medium text-gray-700">Min. Confidence</label>
+                <input type="range" id="confidence" min="0" max="100" value="50" 
+                       class="mt-1 block w-full" 
+                       oninput="document.getElementById('confidenceValue').textContent = this.value + '%'">
+                <span id="confidenceValue" class="text-sm text-gray-500">50%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logs Table -->
+    <div class="px-6 py-4 overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Timestamp
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Waste Type
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Confidence
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Location
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200" id="logsTableBody">
+                {% for log in logs %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ log.timestamp }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            {% if log.waste_type == 'plastic' %}bg-blue-100 text-blue-800
+                            {% elif log.waste_type == 'metal' %}bg-green-100 text-green-800
+                            {% elif log.waste_type == 'glass' %}bg-red-100 text-red-800
+                            {% elif log.waste_type == 'paper' %}bg-yellow-100 text-yellow-800
+                            {% elif log.waste_type == 'organic' %}bg-purple-100 text-purple-800
+                            {% elif log.waste_type == 'e-waste' %}bg-pink-100 text-pink-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ log.waste_type }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ "%.2f"|format(log.confidence * 100) }}%
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        [{{ log.bbox[0] }}, {{ log.bbox[1] }}, {{ log.bbox[2] }}, {{ log.bbox[3] }}]
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+        <div class="flex items-center justify-between">
+            <div class="flex-1 flex justify-between sm:hidden">
+                <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Previous
+                </button>
+                <button class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Next
+                </button>
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-gray-700">
+                        Showing <span class="font-medium">1</span> to <span class="font-medium">10</span> of <span class="font-medium">{{ logs|length }}</span> results
+                    </p>
+                </div>
+                <div>
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        <button class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <span class="sr-only">Previous</span>
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            1
+                        </button>
+                        <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            2
+                        </button>
+                        <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            3
+                        </button>
+                        <button class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <span class="sr-only">Next</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Filter functionality
+function applyFilters() {
+    const wasteType = document.getElementById('wasteType').value;
+    const dateRange = document.getElementById('dateRange').value;
+    const confidence = document.getElementById('confidence').value;
+
+    // Here you would typically make an API call to get filtered data
+    console.log('Applying filters:', { wasteType, dateRange, confidence });
+}
+
+// Add event listeners to filters
+document.getElementById('wasteType').addEventListener('change', applyFilters);
+document.getElementById('dateRange').addEventListener('change', applyFilters);
+document.getElementById('confidence').addEventListener('change', applyFilters);
+</script>
+{% endblock %}
