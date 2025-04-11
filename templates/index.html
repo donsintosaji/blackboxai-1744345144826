@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bg-white shadow rounded-lg overflow-hidden">
+    <!-- Header Section -->
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h1 class="text-2xl font-bold text-gray-900">Live Waste Detection</h1>
+        <p class="mt-1 text-sm text-gray-500">Real-time waste classification using AI technology</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+        <!-- Video Feed Section -->
+        <div class="lg:col-span-2">
+            <div class="video-container rounded-lg overflow-hidden shadow-inner bg-black">
+                <img src="{{ url_for('video_feed') }}" alt="Live Detection Feed" class="w-full">
+            </div>
+        </div>
+
+        <!-- Controls Section -->
+        <div class="space-y-6">
+            <!-- Detection Controls -->
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Controls</h2>
+                <div class="space-y-3">
+                    <button id="startBtn" onclick="startDetection()" class="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        <i class="fas fa-play mr-2"></i>
+                        Start Detection
+                    </button>
+                    <button id="stopBtn" onclick="stopDetection()" class="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" disabled>
+                        <i class="fas fa-stop mr-2"></i>
+                        Stop Detection
+                    </button>
+                    <button id="recordBtn" onclick="toggleRecording()" class="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <i class="fas fa-record-vinyl mr-2"></i>
+                        Start Recording
+                    </button>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Statistics</h2>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-500">FPS</span>
+                        <span id="fpsCounter" class="text-sm font-mono font-medium text-gray-900">0</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-500">Objects Detected</span>
+                        <span id="objectCounter" class="text-sm font-mono font-medium text-gray-900">0</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-500">Recording Time</span>
+                        <span id="recordingTime" class="text-sm font-mono font-medium text-gray-900">00:00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Waste Categories -->
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Waste Categories</h2>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="flex items-center">
+                        <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                        <span class="text-sm text-gray-600">Plastic</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                        <span class="text-sm text-gray-600">Metal</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                        <span class="text-sm text-gray-600">Glass</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
+                        <span class="text-sm text-gray-600">Paper</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="w-3 h-3 bg-purple-500 rounded-full mr-2"></span>
+                        <span class="text-sm text-gray-600">Organic</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="w-3 h-3 bg-pink-500 rounded-full mr-2"></span>
+                        <span class="text-sm text-gray-600">E-Waste</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="w-3 h-3 bg-gray-500 rounded-full mr-2"></span>
+                        <span class="text-sm text-gray-600">Mixed</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let isDetecting = false;
+let isRecording = false;
+let recordingStartTime = null;
+let recordingTimer = null;
+
+function startDetection() {
+    fetch('/start_detection', { method: 'POST' })
+        .then(response => {
+            if (response.ok) {
+                isDetecting = true;
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+            }
+        });
+}
+
+function stopDetection() {
+    fetch('/stop_detection', { method: 'POST' })
+        .then(response => {
+            if (response.ok) {
+                isDetecting = false;
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('stopBtn').disabled = true;
+                if (isRecording) {
+                    toggleRecording();
+                }
+            }
+        });
+}
+
+function toggleRecording() {
+    const recordBtn = document.getElementById('recordBtn');
+    if (!isRecording) {
+        // Start recording
+        isRecording = true;
+        recordingStartTime = Date.now();
+        recordBtn.innerHTML = '<i class="fas fa-stop-circle mr-2"></i>Stop Recording';
+        recordBtn.classList.replace('bg-blue-600', 'bg-red-600');
+        recordBtn.classList.replace('hover:bg-blue-700', 'hover:bg-red-700');
+        updateRecordingTime();
+        recordingTimer = setInterval(updateRecordingTime, 1000);
+    } else {
+        // Stop recording
+        isRecording = false;
+        recordBtn.innerHTML = '<i class="fas fa-record-vinyl mr-2"></i>Start Recording';
+        recordBtn.classList.replace('bg-red-600', 'bg-blue-600');
+        recordBtn.classList.replace('hover:bg-red-700', 'hover:bg-blue-700');
+        clearInterval(recordingTimer);
+        document.getElementById('recordingTime').textContent = '00:00';
+    }
+}
+
+function updateRecordingTime() {
+    if (!isRecording) return;
+    const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+    const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+    const seconds = (elapsed % 60).toString().padStart(2, '0');
+    document.getElementById('recordingTime').textContent = `${minutes}:${seconds}`;
+}
+
+// Update FPS counter
+setInterval(() => {
+    if (isDetecting) {
+        // This would be updated with actual FPS from backend
+        document.getElementById('fpsCounter').textContent = 
+            Math.floor(Math.random() * 10 + 25); // Simulated FPS between 25-35
+    }
+}, 1000);
+
+// Update object counter
+setInterval(() => {
+    if (isDetecting) {
+        // This would be updated with actual detection count from backend
+        document.getElementById('objectCounter').textContent = 
+            Math.floor(Math.random() * 5); // Simulated object count between 0-5
+    }
+}, 500);
+</script>
+{% endblock %}
