@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bg-white shadow rounded-lg overflow-hidden">
+    <!-- Header Section -->
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h1 class="text-2xl font-bold text-gray-900">Export Detection Data</h1>
+        <p class="mt-1 text-sm text-gray-500">Download detection logs in various formats</p>
+    </div>
+
+    <div class="p-6 space-y-6">
+        <!-- Export Options -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- JSON Export -->
+            <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-file-code text-3xl text-blue-500 mr-3"></i>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">JSON Format</h3>
+                        <p class="text-sm text-gray-500">Export data in JSON format for programmatic use</p>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div class="text-sm text-gray-600">
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>Complete detection metadata</li>
+                            <li>Timestamp information</li>
+                            <li>Confidence scores</li>
+                            <li>Bounding box coordinates</li>
+                        </ul>
+                    </div>
+                    <a href="{{ url_for('export_json') }}" 
+                       class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <i class="fas fa-download mr-2"></i>
+                        Download JSON
+                    </a>
+                </div>
+            </div>
+
+            <!-- CSV Export -->
+            <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-file-csv text-3xl text-green-500 mr-3"></i>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">CSV Format</h3>
+                        <p class="text-sm text-gray-500">Export data in CSV format for spreadsheet analysis</p>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div class="text-sm text-gray-600">
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>Spreadsheet-friendly format</li>
+                            <li>Easy to import into Excel</li>
+                            <li>Compatible with data analysis tools</li>
+                            <li>Simplified data structure</li>
+                        </ul>
+                    </div>
+                    <a href="{{ url_for('export_csv') }}" 
+                       class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        <i class="fas fa-download mr-2"></i>
+                        Download CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Settings -->
+        <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Export Settings</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Date Range -->
+                <div>
+                    <label for="dateRange" class="block text-sm font-medium text-gray-700">Date Range</label>
+                    <select id="dateRange" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md">
+                        <option value="all">All Time</option>
+                        <option value="today">Today</option>
+                        <option value="week">Last 7 Days</option>
+                        <option value="month">Last 30 Days</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                </div>
+
+                <!-- Waste Types -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Waste Types</label>
+                    <div class="mt-2 space-y-2">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="selectAll" class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+                            <label for="selectAll" class="ml-2 text-sm text-gray-700">Select All</label>
+                        </div>
+                        {% for type in ['Plastic', 'Metal', 'Glass', 'Paper', 'Organic', 'E-Waste', 'Mixed'] %}
+                        <div class="flex items-center">
+                            <input type="checkbox" id="{{ type|lower }}" class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded waste-type-checkbox">
+                            <label for="{{ type|lower }}" class="ml-2 text-sm text-gray-700">{{ type }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Preview -->
+        <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Data Preview</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Timestamp
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Waste Type
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Confidence
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for log in logs[:5] %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ log.timestamp }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    {{ log.waste_type }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ "%.2f"|format(log.confidence * 100) }}%
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Handle "Select All" checkbox
+document.getElementById('selectAll').addEventListener('change', function(e) {
+    const checkboxes = document.getElementsByClassName('waste-type-checkbox');
+    for (let checkbox of checkboxes) {
+        checkbox.checked = e.target.checked;
+    }
+});
+
+// Update "Select All" when individual checkboxes change
+const wasteTypeCheckboxes = document.getElementsByClassName('waste-type-checkbox');
+for (let checkbox of wasteTypeCheckboxes) {
+    checkbox.addEventListener('change', function() {
+        const allChecked = Array.from(wasteTypeCheckboxes).every(cb => cb.checked);
+        document.getElementById('selectAll').checked = allChecked;
+    });
+}
+
+// Handle date range changes
+document.getElementById('dateRange').addEventListener('change', function(e) {
+    if (e.target.value === 'custom') {
+        // Here you could show a date picker modal or additional inputs
+        console.log('Custom date range selected');
+    }
+});
+</script>
+{% endblock %}
